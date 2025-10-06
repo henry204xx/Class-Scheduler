@@ -113,7 +113,7 @@ class Jadwal:
     
     
     """
-    the following adalah a bunch of helper methods yang gue gk tau bakal kepake or nah
+    the followings are a bunch of helper methods yang gue gk tau bakal kepake or nah
     nanti kalo gk kepake apus aja
     """
     
@@ -152,3 +152,23 @@ class Jadwal:
     def copy_schedule(self):
         "Buat dapetin copy of the schedule"
         return self.schedule["matrix"].copy()
+    
+    def get_dosen_unavailable_slots(self, nama_dosen):
+        """Buat dapetin semua slot yang gk bisa diisi untuk dosen tertentu"""
+        for dosen in self.dosen:
+            if dosen["nama"] == nama_dosen:
+                slots = []
+                for waktu in dosen["waktu_tidak_bisa"]:
+                    hari_num = self.hari_string_to_number(waktu[0])
+                    jam = waktu[1]
+                    slot = self.day_hour_to_slot(hari_num, jam)
+                    slots.append(slot)
+                return slots
+        return []
+
+    def get_dosen_for_matkul(self, kode_matkul):
+        """Buat dapetin dosen yang ngajar di mata kuliah tsb"""
+        for dosen in self.dosen:
+            if kode_matkul in dosen["mengajar"]:
+                return dosen["nama"]
+        return None
