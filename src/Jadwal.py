@@ -195,6 +195,36 @@ class Jadwal:
                     sum_konflik += konflik_di_slot
         
         return sum_konflik
+
+
+
+    "TODO: ini interpretasi gue bener kan ya? jadi per pertemuan bentrok memang dikali n sks?"
+    
+    def objf_kapasitas_ruang(self):
+        """
+        Hitung total ((jumlah_mhs_per_matkul - kapasitas_ruang) * sks_matkul) 
+        when jumlah_mhs_per_matkul > kapasitas_ruang
+        
+        Returns:
+            int: Total selisih kapasitas dengan jumlah mhs di kelas * sks
+        """
+        end_value = 0
+        for mk_dict in self.mata_kuliah:
+            kode = mk_dict.get('kode')
+            n_mhs = mk_dict.get('jumlah_mahasiswa', 0)
+            sks = mk_dict.get('sks', 0)
+            
+            pertemuan_list = self.schedule_matkul.get(kode, [])
+            for pertemuan in pertemuan_list:
+                kode_ruang = pertemuan.get('ruang', None)
+                ruang_dict = next((r for r in self.ruangan if r["kode"] == kode_ruang), None)
+                
+                if ruang_dict:
+                    kuota = ruang_dict.get('kuota', 0)                
+                    if(n_mhs> kuota):
+                        end_value += (n_mhs - kuota) * sks 
+                        
+        return end_value
                     
     
     
