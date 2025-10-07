@@ -53,7 +53,11 @@ class Jadwal:
         """
         num_slots = 55  # 5 hari * 11 jam (7-17)
         num_ruangan = len(self.ruangan)
-        self.schedule_matrix = np.array([[[] for _ in range(num_ruangan)] for _ in range(num_slots)], dtype=object)
+        
+        self.schedule_matrix = np.empty((num_slots, num_ruangan), dtype=object)
+        for i in range(num_slots):
+            for j in range(num_ruangan):
+                self.schedule_matrix[i, j] = []
         
         self.schedule_matkul = {}
         
@@ -67,6 +71,7 @@ class Jadwal:
                 slot = random.randint(0, num_slots - 1)
                 ruang_idx = random.randint(0, num_ruangan - 1)
                 
+                # Append mata kuliah ke cell
                 self.schedule_matrix[slot, ruang_idx].append(kode)
                 
                 hari, jam = self.slot_to_day_hour(slot)
@@ -79,33 +84,85 @@ class Jadwal:
                 })
     
     def print_schedule(self):
-        """Cetak jadwal dalam format yang mudah dibaca"""
         days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]
         
         for ruang_idx, ruang in enumerate(self.ruangan):
-            print(f"\n{'='*80}")
+            print(f"\n{'='*100}")
             print(f"Ruangan: {ruang['kode']} (Kapasitas: {ruang['kuota']})")
-            print(f"{'='*80}")
+            print(f"{'='*100}")
             print(f"{'Jam':<5}", end="")
             for day in days:
-                print(f"{day:<15}", end="")
+                print(f"{day:<19}", end="")
             print()
-            print("-" * 80)
+            print("-" * 100)
             
             for jam in range(7, 18):
                 print(f"{jam:<5}", end="")
                 for hari in range(1, 6):
                     slot = self.day_hour_to_slot(hari, jam)
                     matkul_list = self.schedule_matrix[slot, ruang_idx]
-                    if len(matkul_list) > 0:
-                        matkul_str = ",".join(matkul_list)
-                        if len(matkul_str) > 13:
-                            matkul_str = matkul_str[:10] + "..."
-                        print(f"{matkul_str:<15}", end="")
+                    
+                    if len(matkul_list) == 0:
+                        print(f"{'':<19}", end="")
+                    elif len(matkul_list) == 1:
+                        print(f"{matkul_list[0]:<19}", end="")
                     else:
-                        print(f"{'':<15}", end="")
+                        print(f"[{len(matkul_list)} matkul]    ", end="")
                 print()
+            
+            print("\nMatkul yang tabrakan di ruangan ini:")
+            has_conflict = False
+            for jam in range(7, 18):
+                for hari in range(1, 6):
+                    slot = self.day_hour_to_slot(hari, jam)
+                    matkul_list = self.schedule_matrix[slot, ruang_idx]
+                    if len(matkul_list) > 1:
+                        has_conflict = True
+                        hari_name = days[hari-1]
+                        print(f"  {hari_name} jam {jam}: {', '.join(matkul_list)}")
+            if not has_conflict:
+                print("  No matkul tabrakan!")
+    
+    
+    """
+    
+    OBJECTIVE FUNCTIONS RELATED METHODS
+    
+    """
+    
+    def objf_waktu_konflik_mhs(self):
+        """
+        Hitung total jumlah konflik waktu yang dialami semua mahasiswa.
+        
+        Returns:
+            int: Total jumlah konflik waktu untuk semua mahasiswa
+                 Lower is better (0 = no konflik)
+        """
+        total_konflik = 0
+        
+        for mhs in self.mahasiswa:
+            matkul_list = mhs.get("daftar_mk", [])
+            slot_occupation = {}
+            
+            for kode_matkul in matkul_list:
+                pertemuan_list = self.schedule_matkul.get(kode_matkul, [])
                 
+                for pertemuan in pertemuan_list:
+                    slot = pertemuan["slot"]
+                    
+                    if slot not in slot_occupation:
+                        slot_occupation[slot] = []
+                    
+                    slot_occupation[slot].append(kode_matkul)
+            
+            for slot, matkul_di_slot in slot_occupation.items():
+                n = len(matkul_di_slot)
+                if n > 1:
+                    konflik_di_slot = n * (n - 1) // 2
+                    total_konflik += konflik_di_slot
+        
+        return total_konflik
+                    
     
     
     """

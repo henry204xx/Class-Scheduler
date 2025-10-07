@@ -1,0 +1,117 @@
+{
+  "kelas_mata_kuliah": [
+    {
+      "kode": "IF2110_K01",
+      "jumlah_mahasiswa": 70,
+      "sks": 4
+    },
+    {
+      "kode": "IF2123_K01",
+      "jumlah_mahasiswa": 65,
+      "sks": 3
+    },
+    {
+      "kode": "IF2211_K01",
+      "jumlah_mahasiswa": 60,
+      "sks": 3
+    },
+    {
+      "kode": "IF2230_K01",
+      "jumlah_mahasiswa": 55,
+      "sks": 3
+    },
+    {
+      "kode": "IF2250_K01",
+      "jumlah_mahasiswa": 50,
+      "sks": 2
+    },
+    {
+      "kode": "IF2120_K01",
+      "jumlah_mahasiswa": 45,
+      "sks": 2
+    },
+    {
+      "kode": "IF2130_K01",
+      "jumlah_mahasiswa": 40,
+      "sks": 2
+    }
+  ],
+
+  "ruangan": [
+    {
+      "kode": "GKU-101",
+      "kuota": 80
+    }
+  ],
+
+  "mahasiswa": [
+    {
+      "nim": "13522001",
+      "daftar_mk": ["IF2110_K01", "IF2123_K01", "IF2211_K01"],
+      "prioritas": [1, 2, 3]
+    },
+    {
+      "nim": "13522002",
+      "daftar_mk": ["IF2110_K01", "IF2230_K01", "IF2250_K01"],
+      "prioritas": [1, 2, 3]
+    },
+    {
+      "nim": "13522003",
+      "daftar_mk": ["IF2123_K01", "IF2211_K01", "IF2120_K01"],
+      "prioritas": [1, 2, 3]
+    },
+    {
+      "nim": "13522004",
+      "daftar_mk": ["IF2230_K01", "IF2250_K01", "IF2130_K01"],
+      "prioritas": [1, 2, 3]
+    },
+    {
+      "nim": "13522005",
+      "daftar_mk": ["IF2110_K01", "IF2211_K01", "IF2130_K01"],
+      "prioritas": [1, 2, 3]
+    },
+    {
+      "nim": "13522006",
+      "daftar_mk": ["IF2123_K01", "IF2230_K01"],
+      "prioritas": [1, 2]
+    },
+    {
+      "nim": "13522007",
+      "daftar_mk": ["IF2120_K01", "IF2250_K01"],
+      "prioritas": [1, 2]
+    },
+    {
+      "nim": "13522008",
+      "daftar_mk": ["IF2211_K01", "IF2130_K01"],
+      "prioritas": [1, 2]
+    }
+  ],
+
+  "jadwal_dosen": [
+    {
+      "nama": "Pak Rinaldi",
+      "mengajar": ["IF2110_K01"],
+      "waktu_tidak_bisa": [["Senin", 7], ["Rabu", 15]]
+    },
+    {
+      "nama": "Bu Nur",
+      "mengajar": ["IF2123_K01", "IF2120_K01"],
+      "waktu_tidak_bisa": [["Selasa", 9], ["Kamis", 13]]
+    },
+    {
+      "nama": "Pak Rila",
+      "mengajar": ["IF2211_K01", "IF2130_K01"],
+      "waktu_tidak_bisa": [["Senin", 10], ["Jumat", 14]]
+    },
+    {
+      "nama": "Bu Dessi",
+      "mengajar": ["IF2230_K01"],
+      "waktu_tidak_bisa": [["Rabu", 8], ["Jumat", 11]]
+    },
+    {
+      "nama": "Pak Judhi",
+      "mengajar": ["IF2250_K01"],
+      "waktu_tidak_bisa": [["Selasa", 7], ["Kamis", 16]]
+    }
+  ]
+}
