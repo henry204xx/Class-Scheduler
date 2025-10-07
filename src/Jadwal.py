@@ -138,7 +138,7 @@ class Jadwal:
             int: Total jumlah konflik waktu untuk semua mahasiswa
                  Lower is better (0 = no konflik)
         """
-        total_konflik = 0
+        sum_konflik = 0
         
         for mhs in self.mahasiswa:
             matkul_list = mhs.get("daftar_mk", [])
@@ -159,9 +159,42 @@ class Jadwal:
                 n = len(matkul_di_slot)
                 if n > 1:
                     konflik_di_slot = n * (n - 1) // 2
-                    total_konflik += konflik_di_slot
+                    sum_konflik += konflik_di_slot
         
-        return total_konflik
+        return sum_konflik
+
+    def objf_waktu_konflik_dosen(self):
+        """
+        Hitung total jumlah konflik waktu yang dialami semua dosen.
+        
+        Returns:
+            int: Total jumlah konflik waktu untuk semua mahasiswa
+                 Lower is better (0 = no konflik)
+        """
+        sum_konflik = 0
+        
+        for dsn in self.dosen:
+            matkul_list = dsn.get("mengajar", [])
+            slot_occupation = {}
+            
+            for kode_matkul in matkul_list:
+                pertemuan_list = self.schedule_matkul.get(kode_matkul, [])
+                
+                for pertemuan in pertemuan_list:
+                    slot = pertemuan["slot"]
+                    
+                    if slot not in slot_occupation:
+                        slot_occupation[slot] = []
+                    
+                    slot_occupation[slot].append(kode_matkul)
+            
+            for slot, matkul_di_slot in slot_occupation.items():
+                n = len(matkul_di_slot)
+                if n > 1:
+                    konflik_di_slot = n * (n - 1) // 2
+                    sum_konflik += konflik_di_slot
+        
+        return sum_konflik
                     
     
     
