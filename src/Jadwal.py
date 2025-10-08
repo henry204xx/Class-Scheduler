@@ -1,6 +1,7 @@
 import json
 import random
 import numpy as np
+import copy
 
 from utils import hari_string_to_number
 
@@ -422,3 +423,135 @@ class Jadwal:
             if kode_matkul in dosen["mengajar"]:
                 return dosen["nama"]
         return None
+
+    def get_neighbors(self):
+        """
+        Generate semua neighbor dari current_state.
+
+        Dengan move antara:
+        1. Swap 2 matkul.
+        2. Pindahkan 1 matkul ke empty slot.
+
+        Returns:
+            list[Jadwal]: List of Jadwal objects.
+        """
+        neighbors = []
+        occupied = self.get_occupied_slots()
+        empty = self.get_empty_slots()
+
+        # === 1. SWAP 2 MATA KULIAH ===
+        for idx1 in range(len(occupied)):
+            for idx2 in range(idx1 + 1, len(occupied)):
+                slot1, ruang1 = occupied[idx1]
+                slot2, ruang2 = occupied[idx2]
+
+                if len(self.schedule_matrix[slot1, ruang1]) > 0 and len(self.schedule_matrix[slot2, ruang2]) > 0:
+                    # ambil 1 matkul dari dua slot berbeda
+                    mk1 = self.schedule_matrix[slot1, ruang1][0]
+                    mk2 = self.schedule_matrix[slot2, ruang2][0]
+
+                    new_jadwal = copy.deepcopy(self)
+
+                    # swap
+                    new_jadwal.remove_from_cell(slot1, ruang1, mk1)
+                    new_jadwal.remove_from_cell(slot2, ruang2, mk2)
+                    new_jadwal.add_to_cell(slot1, ruang1, mk2)
+                    new_jadwal.add_to_cell(slot2, ruang2, mk1)
+
+                    # Update schedule_matkul
+                    for p in new_jadwal.schedule_matkul[mk1]:
+                        if p["slot"] == slot1 and p["ruang_idx"] == ruang1:
+                            p["slot"], p["ruang_idx"], p["ruang"] = slot2, ruang2, new_jadwal.idx_to_ruangan[ruang2]
+                            p["hari"], p["jam"] = new_jadwal.slot_to_day_hour(slot2)
+                    for p in new_jadwal.schedule_matkul[mk2]:
+                        if p["slot"] == slot2 and p["ruang_idx"] == ruang2:
+                            p["slot"], p["ruang_idx"], p["ruang"] = slot1, ruang1, new_jadwal.idx_to_ruangan[ruang1]
+                            p["hari"], p["jam"] = new_jadwal.slot_to_day_hour(slot1)
+
+                    neighbors.append(new_jadwal)
+
+        # === 2. MOVE 1 MATKUL KE EMPTY SLOT ===
+        for occ in occupied:
+            slot_occ, ruang_occ = occ
+            if len(self.schedule_matrix[slot_occ, ruang_occ]) == 0:
+                continue
+
+            for mk in self.schedule_matrix[slot_occ, ruang_occ]:
+                for emp in empty:
+                    slot_emp, ruang_emp = emp
+                    new_jadwal = copy.deepcopy(self)
+
+                    # Move matkul ke cell kosong
+                    new_jadwal.remove_from_cell(slot_occ, ruang_occ, mk)
+                    new_jadwal.add_to_cell(slot_emp, ruang_emp, mk)
+
+                    # Update schedule_matkul
+                    for p in new_jadwal.schedule_matkul[mk]:
+                        if p["slot"] == slot_occ and p["ruang_idx"] == ruang_occ:
+                            p["slot"], p["ruang_idx"], p["ruang"] = slot_emp, ruang_emp, new_jadwal.idx_to_ruangan[ruang_emp]
+                            p["hari"], p["jam"] = new_jadwal.slot_to_day_hour(slot_emp)
+
+                    neighbors.append(new_jadwal)
+
+        return neighbors
+
+
+    def get_random_neighbor(self):
+        """
+        Generate 1 random neighbor dari current state.
+        """
+        new_jadwal = copy.deepcopy(self) 
+
+        occupied_slot = self.get_occupied_slots()
+        empty_slot = self.get_empty_slots()
+
+        if len(occupied_slot) < 1:
+            return new_jadwal
+
+        # choice action
+        action_type = random.choice(["swap", "move"])
+
+        # === 1. Action: Swap ===
+        if action_type == "swap" and len(occupied_slot) >= 2:
+            (slot1, ruang1), (slot2, ruang2) = random.sample(occupied_slot, 2)
+
+            mk1 = self.schedule_matrix[slot1, ruang1][0]
+            mk2 = self.schedule_matrix[slot2, ruang2][0]
+
+            # swap
+            new_jadwal.remove_from_cell(slot1, ruang1, mk1)
+            new_jadwal.remove_from_cell(slot2, ruang2, mk2)
+            new_jadwal.add_to_cell(slot1, ruang1, mk2)
+            new_jadwal.add_to_cell(slot2, ruang2, mk1)
+
+            # Update
+            for mk, (old_slot, old_ruang, new_slot, new_ruang) in [
+                (mk1, (slot1, ruang1, slot2, ruang2)),
+                (mk2, (slot2, ruang2, slot1, ruang1))
+            ]:
+                for p in new_jadwal.schedule_matkul[mk]:
+                    if p["slot"] == old_slot and p["ruang_idx"] == old_ruang:
+                        p["slot"] = new_slot
+                        p["ruang_idx"] = new_ruang
+                        p["ruang"] = new_jadwal.idx_to_ruangan[new_ruang]
+                        p["hari"], p["jam"] = new_jadwal.slot_to_day_hour(new_slot)
+
+        # === 2. Pindah 1 matkul ke empty slot ===
+        elif action_type == "move" and len(empty_slot) > 0:
+            slot_from, ruang_from = random.choice(occupied_slot)
+            slot_to, ruang_to = random.choice(empty_slot)
+
+            if len(self.schedule_matrix[slot_from, ruang_from]) > 0:
+                mk = self.schedule_matrix[slot_from, ruang_from][0]
+
+                new_jadwal.remove_from_cell(slot_from, ruang_from, mk)
+                new_jadwal.add_to_cell(slot_to, ruang_to, mk)
+
+                for p in new_jadwal.schedule_matkul[mk]:
+                    if p["slot"] == slot_from and p["ruang_idx"] == ruang_from:
+                        p["slot"] = slot_to
+                        p["ruang_idx"] = ruang_to
+                        p["ruang"] = new_jadwal.idx_to_ruangan[ruang_to]
+                        p["hari"], p["jam"] = new_jadwal.slot_to_day_hour(slot_to)
+
+        return new_jadwal
