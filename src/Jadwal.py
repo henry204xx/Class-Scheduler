@@ -24,7 +24,10 @@ class Jadwal:
         
         self.schedule_matrix = None  # Matrix 55 x num_ruangan, cell berisi list of matkul
         self.schedule_matkul = {}    # Dict: kode_matkul -> list of pertemuan
+        
         self.random_schedule()
+        
+        "TODO: baut self.obj_function = obj_function"
 
     def print_attr(self):
         print(f"mata kuliah: {self.mata_kuliah}")
@@ -226,8 +229,47 @@ class Jadwal:
                         end_value += (n_mhs - kuota) * sks 
                         
         return end_value
-                    
     
+    
+    def objf_priotitas(self):
+        """
+        Jika ada matkul pada ruang dan jadwal yang sama, per pertemuan di dalam 1 ruang yang bentrok,
+        hitung sum of (bobot_prioritas_x * n_mahasiswa_prioritas_x) lalu hitung sum untuk semua pertemuan
+        yang bentrok di satu ruangan.
+        
+        Returns:
+            int: Obj function prioritas
+        
+        """
+        
+        prioritas_bobot = {
+            1: 1.75,
+            2: 1.5,
+            3: 1.25,
+            4: 1,
+            5: 0.75,
+            6: 0.5,
+            7: 0.25
+        }
+        
+        value = 0
+        
+        conflict_slots = self.get_conflict_slots()
+        for slot, ruang_idx in conflict_slots:
+        
+            list_kode_matkul = self.get_cell(slot= slot, ruang_idx= ruang_idx)
+            for kode_matkul in list_kode_matkul:
+                
+                for mahasiswa_dict in self.mahasiswa:
+                    mks = mahasiswa_dict.get("daftar_mk", [])
+                    prioritas_list = mahasiswa_dict.get("prioritas", [])
+                    
+                    if kode_matkul in mks: 
+                        idx_pos = mks.index(kode_matkul)
+                        value += prioritas_bobot.get(prioritas_list[idx_pos], 0)
+        
+        return value
+                
     
     """
     the followings are a bunch of helper methods yang gue gk tau bakal kepake or nah
@@ -252,7 +294,7 @@ class Jadwal:
         
         """ 
         return self.schedule_matkul.get(kode_matkul, [])
-    
+     
     def get_cell(self, slot, ruang_idx):
         """
         Dapatkan isi cell pada posisi tertentu.
