@@ -26,8 +26,7 @@ class Jadwal:
         self.schedule_matkul = {}    # Dict: kode_matkul -> list of pertemuan
         
         self.random_schedule()
-        
-        "TODO: baut self.obj_function = obj_function"
+        self.objective_function_value = self.objective_function()
 
     def print_attr(self):
         print(f"mata kuliah: {self.mata_kuliah}")
@@ -134,6 +133,9 @@ class Jadwal:
     
     """
     
+    def get_objective_func_value(self):
+        return self.objective_function_value
+    
     def objf_waktu_konflik_mhs(self):
         """
         Hitung total jumlah konflik waktu yang dialami semua mahasiswa.
@@ -231,7 +233,7 @@ class Jadwal:
         return end_value
     
     
-    def objf_priotitas(self):
+    def objf_prioritas(self):
         """
         Jika ada matkul pada ruang dan jadwal yang sama, per pertemuan di dalam 1 ruang yang bentrok,
         hitung sum of (bobot_prioritas_x * n_mahasiswa_prioritas_x) lalu hitung sum untuk semua pertemuan
@@ -269,7 +271,13 @@ class Jadwal:
                         value += prioritas_bobot.get(prioritas_list[idx_pos], 0)
         
         return value
-                
+    
+    
+    "TODO: ini belum weighted"
+    
+    def objective_function(self):
+        return self.objf_waktu_konflik_mhs() + self.objf_kapasitas_ruang() + self.objf_waktu_konflik_dosen() + self.objf_prioritas()
+    
     
     """
     the followings are a bunch of helper methods yang gue gk tau bakal kepake or nah
@@ -597,3 +605,15 @@ class Jadwal:
                         p["hari"], p["jam"] = new_jadwal.slot_to_day_hour(slot_to)
 
         return new_jadwal
+
+    def get_best_neighbor(self):
+        
+        """
+        Return one Jadwal neighbor that has the best objective function
+        """
+        
+        all_neighbors = self.get_neighbors()
+        best_neighbor = max(all_neighbors, key=lambda obj: obj.objective_function_value)
+        return best_neighbor
+        
+        
