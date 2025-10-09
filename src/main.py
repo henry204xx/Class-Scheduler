@@ -13,7 +13,7 @@ print(jadwal.get_objective_func_value())
 
 
 print('\n\n\n jadwal result: ')
-hc = HillClimbing(mode=2)
+hc = HillClimbing(mode=3)
 jadwal_res = hc.predict(jadwal= jadwal)
 jadwal_res.print_schedule()
 print("\nobj function result: ", end="")
