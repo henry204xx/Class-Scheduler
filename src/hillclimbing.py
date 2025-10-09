@@ -38,7 +38,7 @@ class HillClimbing:
         if(self.mode == 1): return self.steepest_ascent()
         elif(self.mode == 2): return self.sideways_move()
         elif(self.mode == 3): return self.random_restart()
-        # elif(self.mode == 4): return self.stochastic()
+        elif(self.mode == 4): return self.stochastic()
         
         else:
             print("error: invalid mode, mode allowed are: \n1 for steepest ascent\n 2 for sideways move\n 3 random restart\n 4 stochastic")
@@ -150,3 +150,28 @@ class HillClimbing:
                 
         
         return best_neighbor, best_value, arr_obj_val
+    
+    def stochastic(self):
+        
+        """
+        performs stochastic HC
+        
+        returns: jadwal_result, result_objective_function, array of objective function
+        """
+        
+        cur_jadwal = self.jadwal
+        cur_obj_val = cur_jadwal.get_objective_func_value()
+        arr_obj_val = [cur_obj_val]
+        
+        i = 1
+        while (i <= self.n_max_iter):
+            neighbor = cur_jadwal.get_random_neighbor()
+            neighbor_obj_val = neighbor.get_objective_func_value_print()
+            
+            if(neighbor_obj_val > cur_obj_val):
+                cur_jadwal = neighbor
+                cur_obj_val = neighbor_obj_val
+                arr_obj_val.append(cur_obj_val)
+            i += 1
+            
+        return cur_jadwal, cur_obj_val, arr_obj_val
