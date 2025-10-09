@@ -1,5 +1,6 @@
 
-import Jadwal
+from Jadwal import Jadwal
+import copy
 
 class HillClimbing:
     
@@ -33,6 +34,7 @@ class HillClimbing:
         
     
     def predict(self, jadwal: Jadwal):
+        self.jadwal = copy.deepcopy(jadwal)
         if(self.mode == 1): return self.steepest_ascent()
         elif(self.mode == 2): return self.sideways_move()
         elif(self.mode == 3): return self.random_restart()
@@ -44,25 +46,31 @@ class HillClimbing:
     def steepest_ascent(self):
         cur_jadwal = self.jadwal
         cur_obj_val = cur_jadwal.get_objective_func_value()
-        neighbor = cur_jadwal.get_best_neighbor()
-        neighbor_obj_val = neighbor.get_objective_func_value()
         
-        while ((cur_obj_val > neighbor_obj_val) and (cur_obj_val != 0)):
-            cur_jadwal = neighbor
+        while True:
             neighbor = cur_jadwal.get_best_neighbor()
-        
+            neighbor_obj_val = neighbor.get_objective_func_value_print()
+            
+            if(neighbor_obj_val <= cur_obj_val): break
+                
+            cur_jadwal = neighbor
+            cur_obj_val = neighbor_obj_val
+            
         return cur_jadwal
 
     def sideways_move(self):
         cur_jadwal = self.jadwal
         cur_obj_val = cur_jadwal.get_objective_func_value()
-        neighbor = cur_jadwal.get_best_neighbor()
-        neighbor_obj_val = neighbor.get_objective_func_value()
         
-        while ((cur_obj_val >= neighbor_obj_val) and (cur_obj_val != 0)):
-            cur_jadwal = neighbor
+        while True:
             neighbor = cur_jadwal.get_best_neighbor()
-        
+            neighbor_obj_val = neighbor.get_objective_func_value_print()
+            
+            if((neighbor_obj_val < cur_obj_val) or cur_obj_val == 0): break
+                
+            cur_jadwal = neighbor
+            cur_obj_val = neighbor_obj_val
+            
         return cur_jadwal
     
 
@@ -80,20 +88,33 @@ class HillClimbing:
         
         cur_jadwal = self.jadwal
         cur_obj_val = cur_jadwal.get_objective_func_value()
-        neighbor = cur_jadwal.get_best_neighbor()
-        neighbor_obj_val = neighbor.get_objective_func_value()
         
+        best_neighbor = None
+        best_value = float('-inf')
+
         i = 0
         
-        while ((cur_obj_val > neighbor_obj_val) and (cur_obj_val != 0) and (i < self.n_max_iter)):
-            cur_jadwal = neighbor
-            neighbor = cur_jadwal.get_best_neighbor()
-            i += 1
-        
-        return cur_jadwal
+        while (i < self.n_max_iter):
             
+            while True:
+                neighbor = cur_jadwal.get_best_neighbor()
+                neighbor_obj_val = neighbor.get_objective_func_value()
+                
+                if(neighbor_obj_val <= cur_obj_val):
+                    if best_value < cur_obj_val: 
+                        best_neighbor = copy.deepcopy(cur_jadwal)
+                        best_value = cur_obj_val
+                    break
+                    
+                cur_jadwal = neighbor
+                cur_obj_val = neighbor_obj_val
+            
+            print(f'current best value at i-{i} = {best_value}')
+            i += 1
+            if(best_value == 0):
+                return best_neighbor
+            
+            cur_jadwal.random_schedule()
+                
         
-    
-     
-        
-        
+        return best_neighbor

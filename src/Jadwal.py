@@ -26,7 +26,6 @@ class Jadwal:
         self.schedule_matkul = {}    # Dict: kode_matkul -> list of pertemuan
         
         self.random_schedule()
-        self.objective_function_value = self.objective_function()
 
     def print_attr(self):
         print(f"mata kuliah: {self.mata_kuliah}")
@@ -133,8 +132,27 @@ class Jadwal:
     
     """
     
+    "TODO: blm di weghted kalau emg perlu"
+    
+    def get_objective_func_value_print(self):
+        print('\n\n============================================')
+        objf_mhs = self.objf_waktu_konflik_mhs()
+        objf_r = self.objf_kapasitas_ruang()
+        objf_dsn = self.objf_waktu_konflik_dosen()
+        objf_p = self.objf_prioritas()
+        print("waktu konflik mhs: ", objf_mhs)
+        print("waktu konflik ruang: ", objf_r)
+        print("waktu konflik dsn: ", objf_dsn)
+        print("waktu konflik prioritas: ", objf_p)
+        print("konflik total: ", objf_p + objf_r + objf_dsn + objf_mhs)
+        return -(objf_mhs + objf_dsn + objf_p + objf_r)
+    
     def get_objective_func_value(self):
-        return self.objective_function_value
+        objf_mhs = self.objf_waktu_konflik_mhs()
+        objf_r = self.objf_kapasitas_ruang()
+        objf_dsn = self.objf_waktu_konflik_dosen()
+        objf_p = self.objf_prioritas()
+        return -(objf_mhs + objf_dsn + objf_p + objf_r)
     
     def objf_waktu_konflik_mhs(self):
         """
@@ -273,10 +291,6 @@ class Jadwal:
         return value
     
     
-    "TODO: ini belum weighted"
-    
-    def objective_function(self):
-        return self.objf_waktu_konflik_mhs() + self.objf_kapasitas_ruang() + self.objf_waktu_konflik_dosen() + self.objf_prioritas()
     
     
     """
@@ -611,9 +625,17 @@ class Jadwal:
         """
         Return one Jadwal neighbor that has the best objective function
         """
+        best_neighbor = None
+        best_value = float('-inf')
         
-        all_neighbors = self.get_neighbors()
-        best_neighbor = max(all_neighbors, key=lambda obj: obj.objective_function_value)
-        return best_neighbor
         
+        for neighbor in self.get_neighbors():
+            cur_objf_neighbor = neighbor.get_objective_func_value()
+            if cur_objf_neighbor > best_value:
+                best_neighbor = neighbor
+                best_value = cur_objf_neighbor
+        
+        return best_neighbor if best_neighbor else self
+        
+
         

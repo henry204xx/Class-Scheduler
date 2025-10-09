@@ -1,10 +1,23 @@
 from Jadwal import Jadwal
+from genetic import GeneticScheduler
+from hillclimbing import HillClimbing
 
 json_name = input("Enter the name of the json: ")
 
 jadwal = Jadwal(json_name=json_name)
 print()
 jadwal.print_schedule()
+print("\nobj function: ", end="")
+print(jadwal.get_objective_func_value())
+
+
+
+print('\n\n\n jadwal result: ')
+hc = HillClimbing(mode=2)
+jadwal_res = hc.predict(jadwal= jadwal)
+jadwal_res.print_schedule()
+print("\nobj function result: ", end="")
+print(jadwal_res.get_objective_func_value())
 
 # print("\njadwal mahasiswa yang konflik ada: ", end="")
 # print(jadwal.objf_waktu_konflik_mhs())
@@ -12,15 +25,8 @@ jadwal.print_schedule()
 # print(jadwal.objf_waktu_konflik_dosen())
 # print("\nobj function kapasitas: ", end="")
 # print(jadwal.objf_kapasitas_ruang())
-print("\nget_conflict_slots: ", end="")
+# print("\nobj function prioritas: ", end="")
+# print(jadwal.objf_prioritas())
 
-conflict_slots = jadwal.get_conflict_slots()
-print(conflict_slots, "\n\n")
 
-for pair in conflict_slots:
-    hari, jam = jadwal.slot_to_day_hour(pair[0])
-    print(f"hari: {hari}, jam: {jam}")
-    
-    
-print("\nobj function prioritas: ", end="")
-print(jadwal.objf_priotitas())
+
