@@ -577,7 +577,11 @@ class Jadwal:
 
         # === 1. Action: Swap ===
         if action_type == "swap" and len(occupied_slot) >= 2:
-            (slot1, ruang1), (slot2, ruang2) = random.sample(occupied_slot, 2)
+            occupied_slot_list = list(occupied_slot)
+            if len(occupied_slot_list) >= 2:
+                (slot1, ruang1), (slot2, ruang2) = random.sample(occupied_slot_list, 2)
+            else:
+                return self  # tidak ada cukup elemen untuk swap, kembalikan diri sendiri
 
             mk1 = self.schedule_matrix[slot1, ruang1][0]
             mk2 = self.schedule_matrix[slot2, ruang2][0]

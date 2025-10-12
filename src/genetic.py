@@ -1,7 +1,7 @@
 """
 Genetic Algorithm for scheduling (integrates with Jadwal.py)
 
-Usage:
+Usage example:
     from Jadwal import Jadwal
     from genetic import GeneticScheduler
 
@@ -23,7 +23,6 @@ Fitness: GA minimizes the same cost components used in Jadwal.py:
   - objf_priotitas
 We compute a weighted sum cost: cost = w1*c1 + w2*c2 + w3*c3 + w4*c4
 and convert to fitness = 1 / (1 + cost) (higher fitness is better).
-
 """
 
 import copy
@@ -40,11 +39,9 @@ class GeneticScheduler:
                  mutation_rate=0.2,
                  elitism=2,
                  weights=None,
-                 tournament_k=3,
                  seed=None):
         """
-        base_jadwal: an instance of Jadwal loaded with the target json (used to
-                    create new individuals and to access meta information)
+        base_jadwal: instance of Jadwal loaded with json test case
         weights: dict with keys 'mhs', 'dosen', 'kapasitas', 'prioritas'
         """
         if seed is not None:
@@ -57,21 +54,19 @@ class GeneticScheduler:
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
         self.elitism = elitism
-        self.tournament_k = tournament_k
 
-        # Default equal weights (you can tune these)
+        # Default equal weights (can be tuned)
         if weights is None:
             weights = {"mhs": 1.0, "dosen": 1.0, "kapasitas": 1.0, "prioritas": 1.0}
         self.weights = weights
 
-        # containers to track progress
-        self.best_history = []  # best cost per generation
-        self.avg_history = []   # avg cost per generation
+        # Tracking progress
+        self.best_history = []
+        self.avg_history = []
 
     # ----------------- Fitness / Cost -----------------
     def cost(self, jadwal: Jadwal):
-        """Compute the combined cost (lower is better) using the same
-        component functions available in Jadwal.py"""
+        """Compute combined cost (lower is better)"""
         c1 = jadwal.objf_waktu_konflik_mhs()
         c2 = jadwal.objf_waktu_konflik_dosen()
         c3 = jadwal.objf_kapasitas_ruang()
@@ -84,8 +79,7 @@ class GeneticScheduler:
         return float(total)
 
     def fitness(self, jadwal: Jadwal):
-        """Convert cost to fitness. We use a simple transform so that fitness
-        is higher for lower costs. fitness in (0, 1]."""
+        """Convert cost to fitness (higher fitness = better)"""
         c = self.cost(jadwal)
         return 1.0 / (1.0 + c)
 
@@ -93,30 +87,40 @@ class GeneticScheduler:
     def init_population(self):
         pop = []
         for _ in range(self.population_size):
-            # make new random schedule by deep-copying base and randomizing
             ind = copy.deepcopy(self.base)
             ind.random_schedule()
             pop.append(ind)
         return pop
 
-    # ----------------- Selection -----------------
-    def tournament_select(self, population, fitnesses):
-        """Tournament selection returns one selected individual (deep-copied)."""
-        chosen = random.sample(list(zip(population, fitnesses)), k=self.tournament_k)
-        chosen.sort(key=lambda x: x[1], reverse=True)  # higher fitness better
-        winner = copy.deepcopy(chosen[0][0])
-        return winner
+    # ----------------- Selection (Roulette Wheel) -----------------
+    def roulette_select(self, population, fitnesses):
+        """Roulette wheel selection — probabilistic selection by fitness proportion."""
+        total_fit = sum(fitnesses)
+        if total_fit == 0:
+            # if all fitness are zero, select randomly
+            return copy.deepcopy(random.choice(population))
+
+        probs = [f / total_fit for f in fitnesses]
+        cumulative = []
+        cumsum = 0
+        for p in probs:
+            cumsum += p
+            cumulative.append(cumsum)
+
+        r = random.random()  # random number in [0, 1)
+        for i, cum in enumerate(cumulative):
+            if r <= cum:
+                return copy.deepcopy(population[i])
+
+        # fallback (floating point edge case)
+        return copy.deepcopy(population[-1])
 
     # ----------------- Crossover -----------------
     def crossover(self, parent_a: Jadwal, parent_b: Jadwal):
-        """
-        Child creation by inheriting per-course per-pertemuan locations from
-        parents. This keeps schedule_matkul consistent (each pertemuan belongs to
-        some slot+ruang).
-        """
+        """Create a child by inheriting pertemuan locations from parents."""
         child = copy.deepcopy(self.base)
 
-        # clear child schedule
+        # Clear child schedule
         num_slots = child.schedule_matrix.shape[0]
         num_ruang = child.schedule_matrix.shape[1]
         for i in range(num_slots):
@@ -124,14 +128,13 @@ class GeneticScheduler:
                 child.schedule_matrix[i, j] = []
         child.schedule_matkul = {mk["kode"]: [] for mk in child.mata_kuliah}
 
-        # For each mata_kuliah, take each pertemuan (index order) from either parent
+        # For each course, inherit meetings from parent A or B
         for mk in child.mata_kuliah:
             kode = mk["kode"]
             per_a = parent_a.schedule_matkul.get(kode, [])
             per_b = parent_b.schedule_matkul.get(kode, [])
-
-            # If parents contain different numbers of pertemuan (shouldn't), pad by random
             max_len = max(len(per_a), len(per_b), mk.get("sks", 0))
+
             for idx in range(max_len):
                 choice_parent = random.choice(["a", "b"])
                 selected = None
@@ -141,25 +144,19 @@ class GeneticScheduler:
                 elif choice_parent == "b" and idx < len(per_b):
                     selected = per_b[idx]
                 else:
-                    # fallback: pick whichever parent has the idx, or random empty slot
-                    if idx < len(per_a):
-                        selected = per_a[idx]
-                    elif idx < len(per_b):
-                        selected = per_b[idx]
-                    else:
-                        # place randomly
-                        slot = random.randint(0, num_slots - 1)
-                        ruang_idx = random.randint(0, num_ruang - 1)
-                        selected = {"slot": slot, "hari": child.slot_to_day_hour(slot)[0],
-                                    "jam": child.slot_to_day_hour(slot)[1],
-                                    "ruang": child.idx_to_ruangan[ruang_idx],
-                                    "ruang_idx": ruang_idx}
+                    slot = random.randint(0, num_slots - 1)
+                    ruang_idx = random.randint(0, num_ruang - 1)
+                    selected = {
+                        "slot": slot,
+                        "hari": child.slot_to_day_hour(slot)[0],
+                        "jam": child.slot_to_day_hour(slot)[1],
+                        "ruang": child.idx_to_ruangan[ruang_idx],
+                        "ruang_idx": ruang_idx
+                    }
 
-                # place selected pertemuan into child's matrix
                 slot = selected["slot"]
                 ruang_idx = selected["ruang_idx"]
                 child.schedule_matrix[slot, ruang_idx].append(kode)
-                # append to schedule_matkul
                 child.schedule_matkul[kode].append({
                     "slot": slot,
                     "hari": child.slot_to_day_hour(slot)[0],
@@ -172,8 +169,7 @@ class GeneticScheduler:
 
     # ----------------- Mutation -----------------
     def mutate(self, individual: Jadwal):
-        """Apply mutation via the get_random_neighbor operator. Returns mutated ind."""
-        # small chance to apply multiple mutations depending on mutation_rate
+        """Apply mutation via get_random_neighbor()."""
         if random.random() < self.mutation_rate:
             return individual.get_random_neighbor()
         return individual
@@ -186,7 +182,6 @@ class GeneticScheduler:
             fitnesses = [self.fitness(ind) for ind in population]
             costs = [self.cost(ind) for ind in population]
 
-            # track
             best_idx = int(np.argmax(fitnesses))
             best_cost = costs[best_idx]
             avg_cost = float(np.mean(costs))
@@ -196,30 +191,26 @@ class GeneticScheduler:
             if verbose and (gen % max(1, self.generations // 10) == 0 or gen == self.generations - 1):
                 print(f"Gen {gen:4d}: best_cost={best_cost:.4f}, avg_cost={avg_cost:.4f}")
 
-            # Elitism: keep top-k
+            # Elitism: keep top individuals
             sorted_pop = sorted(zip(population, fitnesses, costs), key=lambda x: x[1], reverse=True)
             new_population = [copy.deepcopy(x[0]) for x in sorted_pop[:self.elitism]]
 
-            # fill rest
+            # Fill the rest with crossover and mutation
             while len(new_population) < self.population_size:
-                # selection
-                parent_a = self.tournament_select(population, fitnesses)
-                parent_b = self.tournament_select(population, fitnesses)
+                parent_a = self.roulette_select(population, fitnesses)
+                parent_b = self.roulette_select(population, fitnesses)
 
-                # crossover
                 if random.random() < self.crossover_rate:
                     child = self.crossover(parent_a, parent_b)
                 else:
                     child = copy.deepcopy(parent_a)
 
-                # mutation
                 child = self.mutate(child)
-
                 new_population.append(child)
 
             population = new_population
 
-        # final evaluation
+        # Final evaluation
         fitnesses = [self.fitness(ind) for ind in population]
         costs = [self.cost(ind) for ind in population]
         best_idx = int(np.argmax(fitnesses))
@@ -232,7 +223,7 @@ class GeneticScheduler:
         return best_ind
 
 
-# ----------------- Example helper to run experiments -----------------
+# ----------------- Example Runner -----------------
 if __name__ == "__main__":
     import time
     json_name = input("Enter json name (e.g., tc1.json): ")
@@ -251,5 +242,3 @@ if __name__ == "__main__":
     print(f"Elapsed: {t1-t0:.2f}s")
     print("Best schedule:")
     best.print_schedule()
-
-    # optionally, you can access ga.best_history and ga.avg_history for plotting
