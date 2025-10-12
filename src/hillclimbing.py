@@ -28,7 +28,7 @@ class HillClimbing:
 
     """
     
-    def __init__(self, mode: int, n_max_iter = 10):
+    def __init__(self, mode: int, n_max_iter = 10000):
         self.mode = mode
         self.n_max_iter = n_max_iter
         
@@ -181,7 +181,7 @@ class HillClimbing:
         i = 1
         while (i <= self.n_max_iter):
             neighbor = cur_jadwal.get_random_neighbor()
-            neighbor_obj_val = neighbor.get_objective_func_value_print()
+            neighbor_obj_val = neighbor.get_objective_func_value()
             
             if(neighbor_obj_val > cur_obj_val):
                 cur_jadwal = neighbor
