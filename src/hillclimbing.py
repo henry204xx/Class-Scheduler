@@ -28,7 +28,7 @@ class HillClimbing:
 
     """
     
-    def __init__(self, mode: int, n_max_iter = 10000):
+    def __init__(self, mode: int, n_max_iter = 10):
         self.mode = mode
         self.n_max_iter = n_max_iter
         
