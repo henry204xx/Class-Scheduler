@@ -71,43 +71,58 @@ class HillClimbing:
         return cur_jadwal, cur_obj_val, arr_obj_val, i 
 
     def sideways_move(self):
-        
         """
-        performs sideways move HC
-        
+        Performs sideways move Hill Climbing.
+
         returns: jadwal_result, result_objective_function, array of objective function, amount_of_iteration
         """
-        
+
         cur_jadwal = self.jadwal
         cur_obj_val = cur_jadwal.get_objective_func_value()
+        arr_obj_val = [cur_obj_val]
+
         i = 0
         n_sideways = 0
-        
-        arr_obj_val = [cur_obj_val]
-        
-        while (i <= self.n_max_iter):
+
+        while True:
             neighbor = cur_jadwal.get_best_neighbor()
             neighbor_obj_val = neighbor.get_objective_func_value_print()
-            
-            if((neighbor_obj_val < cur_obj_val) or cur_obj_val == 0): break
-            
-            if(cur_obj_val == neighbor_obj_val): n_sideways += 1
-            else: n_sideways = 0
-            
+
+            # stop if worse
+            if neighbor_obj_val < cur_obj_val:
+                break
+
+            if neighbor_obj_val == cur_obj_val:
+                n_sideways += 1
+
+            # stop if total sideways moves exceed limit
+            if n_sideways >= self.n_max_iter:
+                # print(f"Stopped after reaching maximum sideways moves ({self.n_max_iter}).")
+                break
+
             cur_jadwal = neighbor
             cur_obj_val = neighbor_obj_val
             arr_obj_val.append(cur_obj_val)
             i += 1
-            
+
         return cur_jadwal, cur_obj_val, arr_obj_val, i
-    
+
+
+    # def _serialize_state(self, jadwal):
+    #     """
+    #     Convert schedule structure into a unique string representation
+    #     to detect already visited states.
+    #     """
+    #     items = sorted(jadwal.schedule_matkul.items())
+    #     return str([(k, sorted([(p["slot"], p["ruang_idx"]) for p in v])) for k, v in items])
 
     def random_restart(self):
         
         """
         performs random restart
         
-        returns: jadwal_result, result_objective_function, array of objective function, amount_of_iteration
+        returns: jadwal_result, result_objective_function, array of objective function,
+                amount_of_restart, array of number of iterations
         """
         
         if(self.n_max_iter <= 0):
@@ -117,11 +132,12 @@ class HillClimbing:
         cur_jadwal = self.jadwal
         cur_obj_val = cur_jadwal.get_objective_func_value()
         
-        best_neighbor = None
-        best_value = float('-inf')
+        best_neighbor = copy.deepcopy(cur_jadwal)
+        best_value = cur_obj_val
 
         i = 0
         arr_obj_val = [cur_obj_val]
+        arr_num_of_iter_restart = []
         
         while (i < self.n_max_iter):
             j = 0
@@ -141,15 +157,14 @@ class HillClimbing:
                 j += 1
             
             i += 1
-            print(f'Restart {i} = {j} iterations')
-            if(best_value == 0):
-                return best_neighbor
+            # print(f'Restart {i} = {j} iterations')
+            arr_num_of_iter_restart.append(j)
             
             cur_jadwal.random_schedule()
             cur_obj_val = cur_jadwal.get_objective_func_value()
                 
         
-        return best_neighbor, best_value, arr_obj_val
+        return best_neighbor, best_value, arr_obj_val, i, arr_num_of_iter_restart
     
     def stochastic(self):
         
