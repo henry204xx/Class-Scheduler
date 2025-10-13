@@ -1,4 +1,4 @@
-def hari_string_to_number(self, hari_str):
+def hari_string_to_number(hari_str):
     """
     Konversi nama hari ke angka.
     

@@ -180,7 +180,8 @@ class Jadwal:
                     slot_occupation[slot].append(kode_matkul)
             
             for slot, matkul_di_slot in slot_occupation.items():
-                n = len(matkul_di_slot)
+                unique_matkul_di_slot = set(matkul_di_slot)
+                n = len(unique_matkul_di_slot)
                 if n > 1:
                     konflik_di_slot = n * (n - 1) // 2
                     sum_konflik += konflik_di_slot
@@ -199,6 +200,7 @@ class Jadwal:
         
         for dsn in self.dosen:
             matkul_list = dsn.get("mengajar", [])
+            unavailable_slots = set(self.get_dosen_unavailable_slots(dsn["nama"]))
             slot_occupation = {}
             
             for kode_matkul in matkul_list:
@@ -207,13 +209,14 @@ class Jadwal:
                 for pertemuan in pertemuan_list:
                     slot = pertemuan["slot"]
                     
-                    if slot not in slot_occupation:
-                        slot_occupation[slot] = []
+                    if slot in unavailable_slots:
+                        sum_konflik += 1
                     
-                    slot_occupation[slot].append(kode_matkul)
+                    slot_occupation.setdefault(slot, []).append(kode_matkul)
             
             for slot, matkul_di_slot in slot_occupation.items():
-                n = len(matkul_di_slot)
+                unique_matkul_di_slot = set(matkul_di_slot)
+                n = len(unique_matkul_di_slot)
                 if n > 1:
                     konflik_di_slot = n * (n - 1) // 2
                     sum_konflik += konflik_di_slot
@@ -246,7 +249,7 @@ class Jadwal:
                 if ruang_dict:
                     kuota = ruang_dict.get('kuota', 0)                
                     if(n_mhs> kuota):
-                        end_value += (n_mhs - kuota) * sks 
+                        end_value += (n_mhs - kuota)
                         
         return end_value
     
@@ -642,4 +645,183 @@ class Jadwal:
         return best_neighbor if best_neighbor else self
         
 
+    def validate_schedule(self):
+        """
+        Check if this schedule has any conflicts.
+        Conditions checked:
+            1. Two or more matkul in the same room and same time.
+            2. A student attends two classes at the same time.
+            3. A lecturer teaches two classes at the same time or at unavailable time.
+            4. Room capacity is smaller than number of students in that class.
+
+        Prints detected problems and returns True if schedule is valid (no conflict),
+        otherwise False.
+        """
+        print("\n=== VALIDATION REPORT ===")
+        valid = True
+
+        # 1. Room conflicts
+        for slot in range(self.schedule_matrix.shape[0]):
+            hari, jam = self.slot_to_day_hour(slot)
+            for ruang_idx, ruang in enumerate(self.ruangan):
+                matkul_list = self.schedule_matrix[slot, ruang_idx]
+                if len(matkul_list) > 1:
+                    valid = False
+                    print(f"[ROOM CONFLICT] {ruang['kode']} at hari {hari}, jam {jam}: {', '.join(matkul_list)}")
+
+        # 2. Student conflicts
+        for mhs in self.mahasiswa:
+            nim = mhs["nim"]
+            matkul_list = mhs["daftar_mk"]
+            slot_occupation = {}
+
+            for kode in matkul_list:
+                for p in self.schedule_matkul.get(kode, []):
+                    slot = p["slot"]
+                    slot_occupation.setdefault(slot, set()).add(kode)  # use set to avoid duplicates
+
+            for slot, codes in slot_occupation.items():
+                if len(codes) > 1:
+                    valid = False
+                    hari, jam = self.slot_to_day_hour(slot)
+                    print(f"[STUDENT CONFLICT] Mahasiswa {nim} has {', '.join(sorted(codes))} at hari {hari}, jam {jam}")
+
+        # 3. Lecturer conflicts + unavailable time
+        for dsn in self.dosen:
+            nama = dsn["nama"]
+            mengajar = dsn.get("mengajar", [])
+            unavailable = set(self.get_dosen_unavailable_slots(nama))
+            slot_occupation = {}
+
+            for kode in mengajar:
+                for p in self.schedule_matkul.get(kode, []):
+                    slot = p["slot"]
+                    if slot in unavailable:
+                        valid = False
+                        hari, jam = self.slot_to_day_hour(slot)
+                        print(f"[LECTURER UNAVAILABLE] {nama} teaches {kode} at unavailable time (hari {hari}, jam {jam})")
+
+                    slot_occupation.setdefault(slot, set()).add(kode)  # use set to avoid duplicates
+
+            for slot, codes in slot_occupation.items():
+                if len(codes) > 1:
+                    valid = False
+                    hari, jam = self.slot_to_day_hour(slot)
+                    print(f"[LECTURER CONFLICT] {nama} teaches {', '.join(sorted(codes))} at hari {hari}, jam {jam}")
+
+        # 4. Room capacity
+        for mk in self.mata_kuliah:
+            kode = mk["kode"]
+            n_mhs = mk["jumlah_mahasiswa"]
+            for p in self.schedule_matkul.get(kode, []):
+                ruang_kode = p["ruang"]
+                ruang_dict = next((r for r in self.ruangan if r["kode"] == ruang_kode), None)
+                if ruang_dict and n_mhs > ruang_dict["kuota"]:
+                    valid = False
+                    print(f"[ROOM CAPACITY] {kode} has {n_mhs} students, exceeds {ruang_kode}'s capacity {ruang_dict['kuota']}")
+
+        if valid:
+            print("Schedule is valid — no conflicts detected.")
+        else:
+            print("Schedule has conflicts (see above).")
+
+        return valid
+    
+
+    def debug_objective_components(self):
+        objf_mhs = self.objf_waktu_konflik_mhs()
+        objf_r = self.objf_kapasitas_ruang()
+        objf_dsn = self.objf_waktu_konflik_dosen()
+        objf_p = self.objf_prioritas()
         
+        print(f"DEBUG - Room Capacity Violations: {objf_r}")
+        print(f"DEBUG - Student Conflicts: {objf_mhs}")
+        print(f"DEBUG - Lecturer Conflicts: {objf_dsn}")
+        print(f"DEBUG - Priority Conflicts: {objf_p}")
+        print(f"DEBUG - Total Raw: {objf_mhs + objf_dsn + objf_p + objf_r}")
+        
+        return objf_mhs, objf_r, objf_dsn, objf_p
+    
+
+    def debug_student_conflicts(self):
+        """Debug exactly which students have conflicts and where"""
+        print("\n=== DEBUG STUDENT CONFLICTS ===")
+        
+        for mhs in self.mahasiswa:
+            nim = mhs["nim"]
+            matkul_list = mhs.get("daftar_mk", [])
+            slot_occupation = {}
+            
+            # Track all courses per slot for this student
+            for kode_matkul in matkul_list:
+                pertemuan_list = self.schedule_matkul.get(kode_matkul, [])
+                for pertemuan in pertemuan_list:
+                    slot = pertemuan["slot"]
+                    if slot not in slot_occupation:
+                        slot_occupation[slot] = []
+                    slot_occupation[slot].append({
+                        'kode': kode_matkul,
+                        'ruang': pertemuan['ruang'],
+                        'hari': pertemuan['hari'], 
+                        'jam': pertemuan['jam']
+                    })
+            
+            # Check for conflicts
+            conflicts_found = False
+            for slot, courses in slot_occupation.items():
+                if len(courses) > 1:
+                    conflicts_found = True
+                    print(f"Student {nim} conflict at:")
+                    for course in courses:
+                        print(f"  - {course['kode']} in {course['ruang']} (hari {course['hari']}, jam {course['jam']})")
+            
+            if not conflicts_found:
+                print(f"Student {nim}: No conflicts")
+
+    def debug_lecturer_conflicts(self):
+        """Debug exactly which lecturers have conflicts and where"""
+        print("\n=== DEBUG LECTURER CONFLICTS ===")
+        
+        for dsn in self.dosen:
+            nama = dsn["nama"]
+            matkul_list = dsn.get("mengajar", [])
+            unavailable_slots = set(self.get_dosen_unavailable_slots(nama))
+            slot_occupation = {}
+            
+            # Track all courses per slot for this lecturer
+            for kode_matkul in matkul_list:
+                pertemuan_list = self.schedule_matkul.get(kode_matkul, [])
+                for pertemuan in pertemuan_list:
+                    slot = pertemuan["slot"]
+                    if slot not in slot_occupation:
+                        slot_occupation[slot] = []
+                    slot_occupation[slot].append({
+                        'kode': kode_matkul,
+                        'ruang': pertemuan['ruang'],
+                        'hari': pertemuan['hari'],
+                        'jam': pertemuan['jam']
+                    })
+            
+            # Check for time conflicts
+            conflicts_found = False
+            for slot, courses in slot_occupation.items():
+                if len(courses) > 1:
+                    conflicts_found = True
+                    print(f"Lecturer {nama} TEACHING CONFLICT at:")
+                    for course in courses:
+                        print(f"  - {course['kode']} in {course['ruang']} (hari {course['hari']}, jam {course['jam']})")
+            
+            # Check for unavailable time conflicts
+            unavailable_conflicts = False
+            for kode_matkul in matkul_list:
+                pertemuan_list = self.schedule_matkul.get(kode_matkul, [])
+                for pertemuan in pertemuan_list:
+                    slot = pertemuan["slot"]
+                    if slot in unavailable_slots:
+                        unavailable_conflicts = True
+                        hari, jam = self.slot_to_day_hour(slot)
+                        print(f"Lecturer {nama} UNAVAILABLE CONFLICT:")
+                        print(f"  - {kode_matkul} in {pertemuan['ruang']} at unavailable time (hari {hari}, jam {jam})")
+            
+            if not conflicts_found and not unavailable_conflicts:
+                print(f"Lecturer {nama}: No conflicts")
