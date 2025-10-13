@@ -31,7 +31,7 @@ class SimulatedAnnealing:
                 return cur_jadwal, cur_obj_val, arr_obj_val
 
             best_neighbor = cur_jadwal.get_best_neighbor()
-            print(best_neighbor.get_objective_func_value_print)
+            # print(best_neighbor.get_objective_func_value_print)
 
             delta = best_neighbor.get_objective_func_value() - cur_jadwal.get_objective_func_value()
             if delta > 0:
