@@ -3,7 +3,6 @@ from genetic import GeneticScheduler
 from hillclimbing import HillClimbing
 from simulated_annealing import SimulatedAnnealing
 import time
-import sys
 
 def main():
     print("=" * 70)
@@ -84,8 +83,6 @@ def main():
             ga_params['generations'] = int(input("Generations (default=100): ") or "100")
             ga_params['crossover_rate'] = float(input("Crossover rate (0-1, default=0.8): ") or "0.8")
             
-            print("Note: Using default weights for objective function components")
-            
         except ValueError:
             print("Using default values")
             ga_params = {
@@ -130,24 +127,47 @@ def main():
         
         hc = HillClimbing(mode=hc_params['mode'], n_max_iter=max_iter_param)
         
-        if hc_params['mode'] == 3:
-            result_jadwal, obj_value, history, restarts, iter_per_restart = hc.predict(jadwal=jadwal)
-            iterations = f"{restarts} restarts"
-        else:
+        if hc_params['mode'] == 1:
             result_jadwal, obj_value, history, iterations = hc.predict(jadwal=jadwal)
+            results['Hill Climbing'] = {
+                'jadwal': result_jadwal,
+                'obj_value': obj_value,
+                'time': time.time() - start_time,
+                'iterations': iterations,
+                'history': history
+            }
+        elif hc_params['mode'] == 2:
+            result_jadwal, obj_value, history, iterations, sideways_moves = hc.predict(jadwal=jadwal)
+            results['Hill Climbing'] = {
+                'jadwal': result_jadwal,
+                'obj_value': obj_value,
+                'time': time.time() - start_time,
+                'iterations': iterations,
+                'history': history,
+                'sideways_moves': sideways_moves
+            }
+        elif hc_params['mode'] == 3:
+            result_jadwal, obj_value, history, restarts, iter_per_restart = hc.predict(jadwal=jadwal)
+            results['Hill Climbing'] = {
+                'jadwal': result_jadwal,
+                'obj_value': obj_value,
+                'time': time.time() - start_time,
+                'iterations': restarts,
+                'history': history,
+                'restarts': restarts,
+                'iter_per_restart': iter_per_restart
+            }
+        else:  # mode 4
+            result_jadwal, obj_value, history, iterations = hc.predict(jadwal=jadwal)
+            results['Hill Climbing'] = {
+                'jadwal': result_jadwal,
+                'obj_value': obj_value,
+                'time': time.time() - start_time,
+                'iterations': iterations,
+                'history': history
+            }
         
-        end_time = time.time()
-        hc_time = end_time - start_time
-        
-        results['Hill Climbing'] = {
-            'jadwal': result_jadwal,
-            'obj_value': obj_value,
-            'time': hc_time,
-            'iterations': iterations,
-            'history': history
-        }
-        
-        print(f" Hill Climbing completed in {hc_time:.2f} seconds")
+        print(f" Hill Climbing completed in {results['Hill Climbing']['time']:.2f} seconds")
         print(f"  Final objective value: {obj_value:.2f}")
     
     elif choice == 2:
@@ -190,7 +210,7 @@ def main():
             alpha=sa_params['alpha']
         )
         
-        result_jadwal, obj_value, history = sa.predict()
+        result_jadwal, obj_value, history, arr_delta = sa.predict()
         
         end_time = time.time()
         sa_time = end_time - start_time
@@ -200,7 +220,8 @@ def main():
             'obj_value': obj_value,
             'time': sa_time,
             'iterations': sa.num_of_iteration,
-            'history': history
+            'history': history,
+            'temperature_history': arr_delta
         }
         
         print(f" Simulated Annealing completed in {sa_time:.2f} seconds")
@@ -213,12 +234,12 @@ def main():
     print(f"Initial objective value: {initial_obj:.2f}")
     print()
     
-    for method_name, result in results.items():
-        print(f"{method_name}:")
-        print(f"  Final objective value: {result['obj_value']:.2f}")
-        print(f"  Time: {result['time']:.2f} seconds")
-        print(f"  Iterations: {result['iterations']}")
-        print()
+    # for method_name, result in results.items():
+    #     print(f"{method_name}:")
+    #     print(f"  Final objective value: {result['obj_value']:.2f}")
+    #     print(f"  Time: {result['time']:.2f} seconds")
+    #     print(f"  Iterations: {result['iterations']}")
+    #     print()
     
     result_jadwal = results[list(results.keys())[0]]['jadwal']
     

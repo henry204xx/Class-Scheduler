@@ -25,6 +25,7 @@ class SimulatedAnnealing:
         cur_jadwal = self.cur_jadwal
         cur_obj_val = cur_jadwal.get_objective_func_value()
         arr_obj_val = [cur_obj_val]
+        arr_delta = []
 
         while T >= self.T_min:
             if T < self.T_min:
@@ -41,6 +42,7 @@ class SimulatedAnnealing:
                 
             else:
                 prob_to_move = exp(delta / T)
+                arr_delta.append(prob_to_move)
                 prob_threshold = random.random()
                 if prob_to_move >= prob_threshold:
                     cur_jadwal = best_neighbor
@@ -49,6 +51,5 @@ class SimulatedAnnealing:
 
             T = self.temperature_function(T)
             self.num_of_iteration += 1
-            print(f"T: {T}, Current Objective Value: {cur_obj_val}")
 
-        return cur_jadwal, cur_obj_val, arr_obj_val
+        return cur_jadwal, cur_obj_val, arr_obj_val, arr_delta

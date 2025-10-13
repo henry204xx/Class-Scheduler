@@ -105,7 +105,7 @@ class HillClimbing:
             arr_obj_val.append(cur_obj_val)
             i += 1
 
-        return cur_jadwal, cur_obj_val, arr_obj_val, i
+        return cur_jadwal, cur_obj_val, arr_obj_val, i, n_sideways
 
 
     # def _serialize_state(self, jadwal):
@@ -189,4 +189,4 @@ class HillClimbing:
                 arr_obj_val.append(cur_obj_val)
             i += 1
             
-        return cur_jadwal, cur_obj_val, arr_obj_val
+        return cur_jadwal, cur_obj_val, arr_obj_val, self.n_max_iter
