@@ -643,7 +643,65 @@ class Jadwal:
                 best_value = cur_objf_neighbor
         
         return best_neighbor if best_neighbor else self
-        
+    
+
+    def save_schedule_table(self, filename="jadwal_table.txt"):
+        """
+        Save the schedule in a text file.
+        """
+        if not filename.lower().endswith(".txt"):
+            filename += ".txt"
+            
+        days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]
+        times = list(range(7, 18))  # 7–17
+
+        with open(filename, "w", encoding="utf-8") as f:
+            # Iterate through each room
+            for ruang_idx, ruang in enumerate(self.ruangan):
+                ruang_kode = ruang["kode"]
+                kapasitas = ruang["kuota"]
+                f.write("=" * 100 + "\n")
+                f.write(f"Ruangan: {ruang_kode} (Kapasitas: {kapasitas})\n")
+                f.write("=" * 100 + "\n")
+                f.write(f"{'Jam':<4} {'Senin':<18} {'Selasa':<18} {'Rabu':<18} {'Kamis':<18} {'Jumat':<18}\n")
+                f.write("-" * 100 + "\n")
+
+                for jam in times:
+                    row = [str(jam)]
+                    for hari_idx in range(5):  # 0-4 for Senin-Jumat
+                        slot = hari_idx * 11 + (jam - 7)
+                        matkul_in_slot = self.schedule_matrix[slot, ruang_idx]
+                        
+                        if len(matkul_in_slot) == 0:
+                            # Empty slot
+                            row.append("")
+                        elif len(matkul_in_slot) == 1:
+                            # Single course
+                            row.append(matkul_in_slot[0])
+                        else:
+                            # Multiple courses (conflict)
+                            row.append(f"[{len(matkul_in_slot)} matkul]")
+                    
+                    # Write the row for this time slot
+                    f.write(f"{row[0]:<4} {row[1]:<18} {row[2]:<18} {row[3]:<18} {row[4]:<18} {row[5]:<18}\n")
+
+                # Add conflict information for this room
+                f.write("\nKonflik di ruangan ini:\n")
+                has_conflict = False
+                for jam in times:
+                    for hari_idx in range(5):
+                        slot = hari_idx * 11 + (jam - 7)
+                        matkul_list = self.schedule_matrix[slot, ruang_idx]
+                        if len(matkul_list) > 1:
+                            has_conflict = True
+                            hari_name = days[hari_idx]
+                            f.write(f"  {hari_name} jam {jam}: {', '.join(matkul_list)}\n")
+                
+                f.write("\n" + "=" * 100 + "\n\n")
+
+        print(f"✓ Jadwal berhasil disimpan dalam format tabel ke '{filename}'")
+
+            
 
     def validate_schedule(self):
         """
@@ -744,7 +802,6 @@ class Jadwal:
     
 
     def debug_student_conflicts(self):
-        """Debug exactly which students have conflicts and where"""
         print("\n=== DEBUG STUDENT CONFLICTS ===")
         
         for mhs in self.mahasiswa:
@@ -752,7 +809,6 @@ class Jadwal:
             matkul_list = mhs.get("daftar_mk", [])
             slot_occupation = {}
             
-            # Track all courses per slot for this student
             for kode_matkul in matkul_list:
                 pertemuan_list = self.schedule_matkul.get(kode_matkul, [])
                 for pertemuan in pertemuan_list:
@@ -766,10 +822,10 @@ class Jadwal:
                         'jam': pertemuan['jam']
                     })
             
-            # Check for conflicts
             conflicts_found = False
             for slot, courses in slot_occupation.items():
-                if len(courses) > 1:
+                unique_codes = set(c['kode'] for c in courses)
+                if len(unique_codes) > 1:
                     conflicts_found = True
                     print(f"Student {nim} conflict at:")
                     for course in courses:
@@ -779,7 +835,6 @@ class Jadwal:
                 print(f"Student {nim}: No conflicts")
 
     def debug_lecturer_conflicts(self):
-        """Debug exactly which lecturers have conflicts and where"""
         print("\n=== DEBUG LECTURER CONFLICTS ===")
         
         for dsn in self.dosen:
@@ -788,7 +843,6 @@ class Jadwal:
             unavailable_slots = set(self.get_dosen_unavailable_slots(nama))
             slot_occupation = {}
             
-            # Track all courses per slot for this lecturer
             for kode_matkul in matkul_list:
                 pertemuan_list = self.schedule_matkul.get(kode_matkul, [])
                 for pertemuan in pertemuan_list:
@@ -802,16 +856,15 @@ class Jadwal:
                         'jam': pertemuan['jam']
                     })
             
-            # Check for time conflicts
             conflicts_found = False
             for slot, courses in slot_occupation.items():
-                if len(courses) > 1:
+                unique_codes = set(c['kode'] for c in courses)
+                if len(unique_codes) > 1:
                     conflicts_found = True
                     print(f"Lecturer {nama} TEACHING CONFLICT at:")
                     for course in courses:
                         print(f"  - {course['kode']} in {course['ruang']} (hari {course['hari']}, jam {course['jam']})")
             
-            # Check for unavailable time conflicts
             unavailable_conflicts = False
             for kode_matkul in matkul_list:
                 pertemuan_list = self.schedule_matkul.get(kode_matkul, [])

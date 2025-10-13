@@ -30,7 +30,7 @@ class SimulatedAnnealing:
             if T < self.T_min:
                 return cur_jadwal, cur_obj_val, arr_obj_val
 
-            best_neighbor = cur_jadwal.get_best_neighbor()
+            best_neighbor = cur_jadwal.get_random_neighbor()
             # print(best_neighbor.get_objective_func_value_print)
 
             delta = best_neighbor.get_objective_func_value() - cur_jadwal.get_objective_func_value()
@@ -49,5 +49,6 @@ class SimulatedAnnealing:
 
             T = self.temperature_function(T)
             self.num_of_iteration += 1
+            print(f"T: {T}, Current Objective Value: {cur_obj_val}")
 
         return cur_jadwal, cur_obj_val, arr_obj_val
