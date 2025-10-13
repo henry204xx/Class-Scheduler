@@ -86,7 +86,7 @@ class HillClimbing:
 
         while True:
             neighbor = cur_jadwal.get_best_neighbor()
-            neighbor_obj_val = neighbor.get_objective_func_value_print()
+            neighbor_obj_val = neighbor.get_objective_func_value()
 
             # stop if worse
             if neighbor_obj_val < cur_obj_val:
