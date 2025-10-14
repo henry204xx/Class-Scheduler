@@ -85,7 +85,10 @@ def main():
         try:
             ga_params['population_size'] = int(input("Population size (default=30): ") or "30")
             ga_params['generations'] = int(input("Generations (default=100): ") or "100")
-            ga_params['crossover_rate'] = float(input("Crossover rate (0-1, default=0.8): ") or "0.8")
+            ga_params['elitisism_ratio'] = float(input("Elitism ratio (0-1, default=0.2): ") or "0.2")
+            ga_params['n_tournament'] = int(input("Tournament group size (default=5): ") or "5")
+            ga_params['best_tournament'] = int(input("Best individuals per group (default=2): ") or "2")
+
             
         except ValueError:
             print("Using default values")
@@ -193,9 +196,11 @@ def main():
             base_jadwal=jadwal,
             population_size=ga_params['population_size'],
             generations=ga_params['generations'],
-            crossover_rate=ga_params['crossover_rate'],
+            elitisism_ratio=ga_params['elitisism_ratio'],
+            n_tournament=ga_params['n_tournament'],
+            best_tournament=ga_params['best_tournament'],
             seed=42
-        )
+)
         
         result_jadwal = ga.run(verbose=False)
         obj_value = result_jadwal.get_objective_func_value()
