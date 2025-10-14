@@ -99,7 +99,7 @@ class SearchAnalyzer:
         plt.title('Simulated Annealing: exp(ΔE / T) vs Iterations')
         plt.legend()
         plt.grid(True, alpha=0.3)
-        plt.yscale('log')
+        # plt.yscale('log')
         plt.tight_layout()
         plt.show()
 
