@@ -686,7 +686,6 @@ class Jadwal:
                     f.write(f"{row[0]:<4} {row[1]:<18} {row[2]:<18} {row[3]:<18} {row[4]:<18} {row[5]:<18}\n")
 
                 # Add conflict information for this room
-                f.write("\nKonflik di ruangan ini:\n")
                 has_conflict = False
                 for jam in times:
                     for hari_idx in range(5):
@@ -699,7 +698,7 @@ class Jadwal:
                 
                 f.write("\n" + "=" * 100 + "\n\n")
 
-        print(f"✓ Jadwal berhasil disimpan dalam format tabel ke '{filename}'")
+        print(f"Jadwal berhasil disimpan dalam format tabel ke '{filename}'")
 
             
 
@@ -736,7 +735,7 @@ class Jadwal:
             for kode in matkul_list:
                 for p in self.schedule_matkul.get(kode, []):
                     slot = p["slot"]
-                    slot_occupation.setdefault(slot, set()).add(kode)  # use set to avoid duplicates
+                    slot_occupation.setdefault(slot, set()).add(kode)  
 
             for slot, codes in slot_occupation.items():
                 if len(codes) > 1:
@@ -759,7 +758,7 @@ class Jadwal:
                         hari, jam = self.slot_to_day_hour(slot)
                         print(f"[LECTURER UNAVAILABLE] {nama} teaches {kode} at unavailable time (hari {hari}, jam {jam})")
 
-                    slot_occupation.setdefault(slot, set()).add(kode)  # use set to avoid duplicates
+                    slot_occupation.setdefault(slot, set()).add(kode) 
 
             for slot, codes in slot_occupation.items():
                 if len(codes) > 1:

@@ -2,6 +2,7 @@ from Jadwal import Jadwal
 from genetic import GeneticScheduler
 from hillclimbing import HillClimbing
 from simulated_annealing import SimulatedAnnealing
+from analysis import SearchAnalyzer
 import time
 
 def main():
@@ -23,8 +24,11 @@ def main():
     print("INITIAL SCHEDULE")
     print("=" * 50)
     jadwal.print_schedule()
-    print(f"\nInitial Objective Function Value: {jadwal.get_objective_func_value():.2f}")
-    # jadwal.validate_schedule()
+    initial_obj = jadwal.get_objective_func_value()
+    print(f"\nInitial Objective Function Value: {initial_obj:.2f}")
+    
+    # Initialize analysis tool
+    analyzer = SearchAnalyzer()
     
     print("\n" + "=" * 50)
     print("METHODS")
@@ -112,7 +116,6 @@ def main():
     print("=" * 50)
     
     results = {}
-    initial_obj = jadwal.get_objective_func_value()
     
     if choice == 1:
         print(f"\nRunning Hill Climbing (Mode {hc_params.get('mode', 1)})...")
@@ -129,46 +132,58 @@ def main():
         
         if hc_params['mode'] == 1:
             result_jadwal, obj_value, history, iterations = hc.predict(jadwal=jadwal)
-            results['Hill Climbing'] = {
-                'jadwal': result_jadwal,
-                'obj_value': obj_value,
-                'time': time.time() - start_time,
-                'iterations': iterations,
-                'history': history
-            }
-        elif hc_params['mode'] == 2:
-            result_jadwal, obj_value, history, iterations, sideways_moves = hc.predict(jadwal=jadwal)
-            results['Hill Climbing'] = {
-                'jadwal': result_jadwal,
+            result_data = {
+                'initial_obj': initial_obj,
                 'obj_value': obj_value,
                 'time': time.time() - start_time,
                 'iterations': iterations,
                 'history': history,
+                'mode': hc_params['mode']
+            }
+            
+        elif hc_params['mode'] == 2:
+            result_jadwal, obj_value, history, iterations, sideways_moves = hc.predict(jadwal=jadwal)
+            result_data = {
+                'initial_obj': initial_obj,
+                'obj_value': obj_value,
+                'time': time.time() - start_time,
+                'iterations': iterations,
+                'history': history,
+                'mode': hc_params['mode'],
+                'max_sideways': hc_params.get('max_sideways', 10),
                 'sideways_moves': sideways_moves
             }
+            
         elif hc_params['mode'] == 3:
             result_jadwal, obj_value, history, restarts, iter_per_restart = hc.predict(jadwal=jadwal)
-            results['Hill Climbing'] = {
-                'jadwal': result_jadwal,
+            result_data = {
+                'initial_obj': initial_obj,
                 'obj_value': obj_value,
                 'time': time.time() - start_time,
                 'iterations': restarts,
                 'history': history,
+                'mode': hc_params['mode'],
+                'max_restart': hc_params.get('max_restart', 5),
                 'restarts': restarts,
                 'iter_per_restart': iter_per_restart
             }
+            
         else:  # mode 4
             result_jadwal, obj_value, history, iterations = hc.predict(jadwal=jadwal)
-            results['Hill Climbing'] = {
-                'jadwal': result_jadwal,
+            result_data = {
+                'initial_obj': initial_obj,
                 'obj_value': obj_value,
                 'time': time.time() - start_time,
                 'iterations': iterations,
-                'history': history
+                'history': history,
+                'mode': hc_params['mode']
             }
         
-        print(f" Hill Climbing completed in {results['Hill Climbing']['time']:.2f} seconds")
-        print(f"  Final objective value: {obj_value:.2f}")
+        # Add to analyzer
+        analyzer.add_result('Hill Climbing', result_data)
+        results['Hill Climbing'] = {'jadwal': result_jadwal, 'obj_value': obj_value}
+        # print(f" Hill Climbing completed in {result_data['time']:.2f} seconds")
+        # print(f"  Final objective value: {obj_value:.2f}")
     
     elif choice == 2:
         print(f"\nRunning Genetic Algorithm...")
@@ -184,20 +199,20 @@ def main():
         
         result_jadwal = ga.run(verbose=False)
         obj_value = result_jadwal.get_objective_func_value()
+        ga_time = time.time() - start_time
         
-        end_time = time.time()
-        ga_time = end_time - start_time
-        
-        results['Genetic Algorithm'] = {
-            'jadwal': result_jadwal,
+        result_data = {
+            'initial_obj': initial_obj,
             'obj_value': obj_value,
             'time': ga_time,
             'iterations': ga_params['generations'],
             'history': ga.best_history
         }
         
-        print(f" Genetic Algorithm completed in {ga_time:.2f} seconds")
-        print(f"  Final objective value: {obj_value:.2f}")
+        analyzer.add_result('Genetic Algorithm', result_data)
+        results['Genetic Algorithm'] = {'jadwal': result_jadwal, 'obj_value': obj_value}
+        # print(f" Genetic Algorithm completed in {ga_time:.2f} seconds")
+        # print(f"  Final objective value: {obj_value:.2f}")
     
     else:
         print(f"\nRunning Simulated Annealing...")
@@ -211,44 +226,40 @@ def main():
         )
         
         result_jadwal, obj_value, history, arr_delta = sa.predict()
+        sa_time = time.time() - start_time
         
-        end_time = time.time()
-        sa_time = end_time - start_time
-        
-        results['Simulated Annealing'] = {
-            'jadwal': result_jadwal,
+        result_data = {
+            'initial_obj': initial_obj,
             'obj_value': obj_value,
             'time': sa_time,
             'iterations': sa.num_of_iteration,
             'history': history,
-            'temperature_history': arr_delta
+            'prob_history': arr_delta,
+            'initial_temp': sa_params['initial_temp'],
+            'min_temp': sa_params['min_temp'],
+            'alpha': sa_params['alpha']
         }
         
-        print(f" Simulated Annealing completed in {sa_time:.2f} seconds")
-        print(f"  Final objective value: {obj_value:.2f}")
+        analyzer.add_result('Simulated Annealing', result_data)
+        results['Simulated Annealing'] = {'jadwal': result_jadwal, 'obj_value': obj_value}
+        # print(f" Simulated Annealing completed in {sa_time:.2f} seconds")
+        # print(f"  Final objective value: {obj_value:.2f}")
     
-    print("\n" + "=" * 70)
-    print("RESULTS")
-    print("=" * 70)
-    
-    print(f"Initial objective value: {initial_obj:.2f}")
-    print()
-    
-    # for method_name, result in results.items():
-    #     print(f"{method_name}:")
-    #     print(f"  Final objective value: {result['obj_value']:.2f}")
-    #     print(f"  Time: {result['time']:.2f} seconds")
-    #     print(f"  Iterations: {result['iterations']}")
-    #     print()
-    
-    result_jadwal = results[list(results.keys())[0]]['jadwal']
+
     
     print("\n" + "=" * 50)
     print("OPTIMIZED SCHEDULE")
     print("=" * 50)
+    result_jadwal = results[list(results.keys())[0]]['jadwal']
     result_jadwal.print_schedule()
     
     print(f"\nFinal Objective Function Value: {result_jadwal.get_objective_func_value():.2f}")
+
+    show_analysis = input("\nShow full analysis report? (y/n): ").lower().strip()
+    while show_analysis not in ['y', 'n']:
+        show_analysis = input("Please enter 'y' or 'n': ").lower().strip()
+    if show_analysis == 'y':
+        analyzer.generate_report()
     
     # print("\n" + "=" * 50)
     # print("VALIDATION & DEBUGGING")
@@ -268,9 +279,17 @@ def main():
     #     pass
     
     save_result = input("\nSave optimized schedule to file? (y/n): ").lower().strip()
+    while save_result not in ['y', 'n']:
+        save_result = input("Please enter 'y' or 'n': ").lower().strip()
     if save_result == 'y':
-        filename = input("Enter filename to save (without extension): ").strip()
-        result_jadwal.save_schedule_table(filename)
+        while True:
+            filename = input("Enter filename to save (without extension): ").strip()
+            if filename and all(c not in filename for c in r'\/:*?"<>|'):
+                result_jadwal.save_schedule_table(filename)
+                print(f"Schedule saved to {filename}.txt")
+                break
+            else:
+                print("Invalid filename.")
     
     print("\n" + "=" * 70)
     print("COMPLETE")
