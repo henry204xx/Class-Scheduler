@@ -76,7 +76,29 @@ class SearchAnalyzer:
                 print(f"  Restarts: {actual_restarts}")
                 if iter_per_restart:
                     print(f"  Iterations per Restart: {iter_per_restart}")
-    
+          
+    def print_genetic_algorithm_stats(self):
+        """Print Genetic Algorithm specific statistics"""
+        ga_algorithms = [name for name in self.results.keys() if 'Genetic Algorithm' in name]
+        
+        if not ga_algorithms:
+            return
+        
+        print("\n" + "="*50)
+        print("GENETIC ALGORITHM STATISTICS")
+        print("="*50)
+        
+        for algo_name in ga_algorithms:
+            data = self.results[algo_name]
+            print(f"\n{algo_name}:")
+            print(f"  Population Size: {data.get('population_size', 'N/A')}")
+            print(f"  Generations: {data.get('iterations', 'N/A')}")
+            print(f"  Elitism Ratio: {data.get('elitisism_ratio', 'N/A')}")
+            print(f"  Tournament Group Size: {data.get('n_tournament', 'N/A')}")
+            print(f"  Best per Tournament: {data.get('best_tournament', 'N/A')}")
+            print(f"  Final Objective Value: {data['obj_value']:.4f}")
+            print(f"  Duration: {data['time']:.2f}s")
+
     def plot_simulated_annealing_temperature(self):
         """Plot exp(ΔE / T) vs iterations for Simulated Annealing"""
         sa_algorithms = [name for name in self.results.keys() if 'Simulated Annealing' in name]
@@ -103,6 +125,31 @@ class SearchAnalyzer:
         plt.tight_layout()
         plt.show()
 
+    def plot_genetic_algorithm_progress(self):
+        """Plot Genetic Algorithm best and average cost history"""
+        ga_algorithms = [name for name in self.results.keys() if 'Genetic Algorithm' in name]
+        
+        if not ga_algorithms:
+            return
+        
+        plt.figure(figsize=(10, 6))
+        
+        for algo_name in ga_algorithms:
+            data = self.results[algo_name]
+            best_history = data.get('history', [])
+            avg_history = data.get('avg_history', [])
+            if best_history:
+                plt.plot(best_history, label=f"{algo_name} (Best)", linewidth=2)
+            if avg_history:
+                plt.plot(avg_history, '--', label=f"{algo_name} (Average)", linewidth=1.5)
+        
+        plt.xlabel('Generations')
+        plt.ylabel('Cost')
+        plt.title('Genetic Algorithm: Best vs Average Cost per Generation')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
     
     def generate_report(self):
         """Generate analysis report with relevant graphs"""
@@ -116,3 +163,8 @@ class SearchAnalyzer:
         if any('Simulated Annealing' in name for name in self.results.keys()):
             self.plot_objective_history()
             self.plot_simulated_annealing_temperature()
+            
+        if any('Genetic Algorithm' in name for name in self.results.keys()):
+            self.print_genetic_algorithm_stats()
+            self.plot_genetic_algorithm_progress()
+      

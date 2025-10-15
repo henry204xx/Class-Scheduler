@@ -8,17 +8,21 @@ class GeneticScheduler:
     def __init__(self, base_jadwal: Jadwal,
                  population_size=30,
                  generations=200,
-                 crossover_rate=0.8,
+                 elitisism_ratio=0.1,
+                 n_tournament=5,
+                 best_tournament=2,
                  weights=None,
                  seed=None):
+        self.base = base_jadwal
+        self.population_size = population_size
+        self.generations = generations
+        self.elitisism_ratio = elitisism_ratio
+        self.n_tournament = n_tournament
+        self.best_tournament = best_tournament
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
 
-        self.base = base_jadwal
-        self.population_size = population_size
-        self.generations = generations
-        self.crossover_rate = crossover_rate
 
         if weights is None:
             weights = {"mhs": 1.0, "dosen": 1.0, "kapasitas": 1.0, "prioritas": 1.0}
@@ -50,6 +54,21 @@ class GeneticScheduler:
             pop.append(ind)
         return pop
 
+    def tournament_population(self, population):
+        new_population = []
+        random.shuffle(population)
+        groups = [population[i:i+self.n_tournament] for i in range(0, len(population), self.n_tournament)]
+        for group in groups:
+            fitnesses = [self.fitness(ind) for ind in group]
+            if len(group) < self.best_tournament:
+                selected = [copy.deepcopy(ind) for ind in group]
+            else:
+                sorted_indices = np.argsort(fitnesses)[-self.best_tournament:]
+                selected = [copy.deepcopy(group[i]) for i in sorted_indices]
+            new_population.extend(selected)
+        self.population_size = len(new_population)
+        return new_population
+
     def selection(self, population, fitnesses):
         total_fit = sum(fitnesses)
         if total_fit == 0:
@@ -67,12 +86,12 @@ class GeneticScheduler:
 
     def crossover_population(self, population):
         new_population = []
-        for i in range(0, self.population_size, 2):
+        for i in range(0, len(population), 2):
             parent_a = population[i]
-            parent_b = population[(i + 1) % self.population_size]
+            parent_b = population[(i + 1) % len(population)]
             child_a, child_b = self.crossover(parent_a, parent_b)
             new_population.extend([child_a, child_b])
-        return new_population[:self.population_size]
+        return new_population[:len(population)]
 
     def mutation_population(self, population):
         new_population = []
@@ -97,7 +116,6 @@ class GeneticScheduler:
                         pertemuan["ruang"] = ind.idx_to_ruangan[new_ruang_idx]
             new_population.append(ind)
         return new_population
-
 
     def crossover(self, parent_a: Jadwal, parent_b: Jadwal):
         n = len(parent_a.mata_kuliah)
@@ -136,7 +154,9 @@ class GeneticScheduler:
 
     def run(self, verbose=True):
         population = self.init_population()
+        population = self.tournament_population(population)
         t0 = time.time()
+        elitism_count = int(self.elitisism_ratio * (self.population_size * self.best_tournament / self.n_tournament))
         for gen in range(self.generations):
             fitnesses = [self.fitness(ind) for ind in population]
             costs = [self.cost(ind) for ind in population]
@@ -146,11 +166,14 @@ class GeneticScheduler:
             self.best_history.append(best_cost)
             self.avg_history.append(avg_cost)
             t1 = time.time()
-            print(f"Gen {gen:4d}: best_cost={best_cost:.4f}, avg_cost={avg_cost:.4f}, time={t1-t0:.4f}")
+            print(f"Gen {gen:4d}: best_cost={best_cost:.4f}, avg_cost={avg_cost:.4f}, time={t1-t0:.3f}")
+            elite_indices = np.argsort(fitnesses)[-elitism_count:]
+            elites = [copy.deepcopy(population[i]) for i in elite_indices]
             selected_pop = self.selection(population, fitnesses)
             crossed_pop = self.crossover_population(selected_pop)
             mutated_pop = self.mutation_population(crossed_pop)
-            population = mutated_pop
+            survivors = mutated_pop[:max(0, self.population_size - elitism_count)]
+            population = elites + survivors
         fitnesses = [self.fitness(ind) for ind in population]
         costs = [self.cost(ind) for ind in population]
         best_idx = int(np.argmax(fitnesses))
@@ -163,14 +186,16 @@ class GeneticScheduler:
         return best_ind
 
 if __name__ == "__main__":
-    import time
     json_name = input("Enter json name (e.g., tc1.json): ")
     base = Jadwal(json_name=json_name)
+    # weight = {"mhs": 10.0, "dosen": 5.0, "kapasitas": 1.0, "prioritas": 1.0}
     ga = GeneticScheduler(base,
-                          population_size=40,
-                          generations=200,
-                          crossover_rate=0.85,
-                          seed=42)
+                          population_size=200,
+                          generations=100,
+                          elitisism_ratio=0.2,
+                          n_tournament=5,
+                          best_tournament=2
+                          )
     t0 = time.time()
     best = ga.run(verbose=True)
     t1 = time.time()
