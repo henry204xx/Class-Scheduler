@@ -63,11 +63,17 @@ def main():
         
         try:
             hc_params['mode'] = int(input("Select Hill Climbing mode (1-4, default=1): ") or "1")
+            if hc_params['mode'] < 1 or hc_params['mode'] > 4:
+                raise ValueError
             
             if hc_params['mode'] == 2:
                 hc_params['max_sideways'] = int(input("Max sideways moves (default=10): ") or "10")
+                if hc_params['max_sideways'] <= 0:
+                    raise ValueError
             elif hc_params['mode'] == 3:
                 hc_params['max_restart'] = int(input("Number of restarts (default=5): ") or "5")
+                if hc_params['max_restart'] <= 0:
+                    raise ValueError
                 
         except ValueError:
             print("Using default values")
@@ -84,11 +90,20 @@ def main():
         print("-" * 30)
         try:
             ga_params['population_size'] = int(input("Population size (default=30): ") or "30")
+            if ga_params['population_size'] <= 0:
+                raise ValueError
             ga_params['generations'] = int(input("Generations (default=100): ") or "100")
+            if ga_params['generations'] <= 0:
+                raise ValueError
             ga_params['elitisism_ratio'] = float(input("Elitism ratio (0-1, default=0.2): ") or "0.2")
+            if not (0 <= ga_params['elitisism_ratio'] <= 1):
+                raise ValueError
             ga_params['n_tournament'] = int(input("Tournament group size (default=5): ") or "5")
+            if ga_params['n_tournament'] <= 0:
+                raise ValueError
             ga_params['best_tournament'] = int(input("Best individuals per group (default=2): ") or "2")
-
+            if ga_params['best_tournament'] <= 0:
+                raise ValueError
             
         except ValueError:
             print("Using default values")
@@ -104,8 +119,14 @@ def main():
         print("-" * 30)
         try:
             sa_params['initial_temp'] = float(input("Initial temperature (default=100): ") or "100")
+            if sa_params['initial_temp'] <= 0:
+                raise ValueError
             sa_params['min_temp'] = float(input("Minimum temperature (default=0.001): ") or "0.001")
+            if sa_params['min_temp'] <= 0:
+                raise ValueError
             sa_params['alpha'] = float(input("Cooling rate (0-1, default=0.95): ") or "0.95")
+            if not (0 < sa_params['alpha'] < 1):
+                raise ValueError
         except ValueError:
             print("Using default values")
             sa_params = {
