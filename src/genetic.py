@@ -66,6 +66,7 @@ class GeneticScheduler:
                 sorted_indices = np.argsort(fitnesses)[-self.best_tournament:]
                 selected = [copy.deepcopy(group[i]) for i in sorted_indices]
             new_population.extend(selected)
+        self.population_size = len(new_population)
         return new_population
 
     def selection(self, population, fitnesses):
