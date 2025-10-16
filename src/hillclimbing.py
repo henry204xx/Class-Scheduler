@@ -67,6 +67,7 @@ class HillClimbing:
             cur_obj_val = neighbor_obj_val
             arr_obj_val.append(cur_obj_val)
             i += 1
+            if(cur_obj_val >= 0): break
             
         return cur_jadwal, cur_obj_val, arr_obj_val, i 
 
@@ -94,16 +95,18 @@ class HillClimbing:
 
             if neighbor_obj_val == cur_obj_val:
                 n_sideways += 1
-
-            # stop if total sideways moves exceed limit
-            if n_sideways >= self.n_max_iter:
-                # print(f"Stopped after reaching maximum sideways moves ({self.n_max_iter}).")
-                break
+                # stop if total sideways moves consecutively has exceed the limit
+                if n_sideways >= self.n_max_iter:
+                    # print(f"Stopped after reaching maximum sideways moves ({self.n_max_iter}).")
+                    break
+            else:
+                n_sideways = 0
 
             cur_jadwal = neighbor
             cur_obj_val = neighbor_obj_val
             arr_obj_val.append(cur_obj_val)
             i += 1
+            if(neighbor_obj_val >= 0): break
 
         return cur_jadwal, cur_obj_val, arr_obj_val, i, n_sideways
 
@@ -160,6 +163,7 @@ class HillClimbing:
             # print(f'Restart {i} = {j} iterations')
             arr_num_of_iter_restart.append(j)
             
+            if(best_value >= 0): break
             cur_jadwal.random_schedule()
             cur_obj_val = cur_jadwal.get_objective_func_value()
                 
@@ -188,5 +192,7 @@ class HillClimbing:
                 cur_obj_val = neighbor_obj_val
                 arr_obj_val.append(cur_obj_val)
             i += 1
+            
+            if(cur_obj_val >= 0): break
             
         return cur_jadwal, cur_obj_val, arr_obj_val, self.n_max_iter
