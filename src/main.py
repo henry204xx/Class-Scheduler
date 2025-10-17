@@ -74,6 +74,10 @@ def main():
                 hc_params['max_restart'] = int(input("Number of restarts (default=5): ") or "5")
                 if hc_params['max_restart'] <= 0:
                     raise ValueError
+            elif hc_params['mode'] == 4:
+                hc_params['max_iterations'] = int(input("Max iterations (default=100): ") or "100")
+                if hc_params['max_iterations'] <= 0:
+                    raise ValueError
                 
         except ValueError:
             print("Using default values")
@@ -83,6 +87,8 @@ def main():
                 hc_params['max_sideways'] = 10
             elif hc_params['mode'] == 3:
                 hc_params['max_restart'] = 5
+            elif hc_params['mode'] == 4:
+                hc_params['max_iterations'] = 100
     
     if choice in [2]:
         print("\n" + "-" * 30)
@@ -149,6 +155,8 @@ def main():
             max_iter_param = hc_params.get('max_sideways', 10)
         elif hc_params['mode'] == 3:
             max_iter_param = hc_params.get('max_restart', 5)
+        elif hc_params['mode'] == 4:
+            max_iter_param = hc_params.get('max_iterations', 100)
         else:
             max_iter_param = 100
         
