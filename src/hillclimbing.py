@@ -190,7 +190,8 @@ class HillClimbing:
             if(neighbor_obj_val > cur_obj_val):
                 cur_jadwal = neighbor
                 cur_obj_val = neighbor_obj_val
-                arr_obj_val.append(cur_obj_val)
+
+            arr_obj_val.append(cur_obj_val)
             i += 1
             
             if(cur_obj_val >= 0): break
