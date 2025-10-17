@@ -10,15 +10,17 @@ def main():
     print("SCHEDULING SYSTEM")
     print("=" * 70)
     
-    json_name = input("Enter the name of the JSON file (e.g., tc1.json): ").strip()
-    
-    print(f"\nLoading schedule from {json_name}...")
-    try:
-        jadwal = Jadwal(json_name=json_name)
-        print(" Schedule loaded successfully!")
-    except Exception as e:
-        print(f" Error loading schedule: {e}")
-        return
+    while True:
+        json_name = input("Enter the name of the JSON file (e.g., tc1.json): ").strip()
+        print(f"\nLoading schedule from {json_name}...")
+
+        try:
+            jadwal = Jadwal(json_name=json_name)
+            print("Schedule loaded successfully!\n")
+            break  
+        except Exception as e:
+            print(f"Error loading schedule: {e}")
+            print("Please check input.\n")
     
     print("\n" + "=" * 50)
     print("INITIAL SCHEDULE")
