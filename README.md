@@ -82,6 +82,7 @@ python src/main.py
 ```
 
 4. Ikuti alur input yang diminta oleh program
+5. Jika program menampilkan window baru untuk menampilkan grafik analisis hasil plotting, tutup terlebih dahulu jendela tersebut untuk lanjut menggunakan program
 
 <br/>
 
@@ -92,3 +93,4 @@ python src/main.py
 | 13523058 | Noumisyifa Nabila Nareswari | - Membangun kelas Jadwal<br/> - Menyusun algoritma Hill Climbing jenis Steepest Ascent, Sideways Move, dan Random Restart <br/> - Menyusun laporan |
 | 13523072 | Sabilul Huda | - Menyusun algoritma genetik<br/> - Menyusun laporan|
 | 13523108 | Henry Filberto Shinelo | - Menyusun algoritma Hill Climbing jenis Stochastic, simulated annealing<br/> -  Membuat main progra<br/> - Membantu membangun kelas Jadwal<br/> - Menyusun laporan |
+
