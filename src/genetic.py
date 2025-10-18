@@ -19,9 +19,9 @@ class GeneticScheduler:
         self.elitisism_ratio = elitisism_ratio
         self.n_tournament = n_tournament
         self.best_tournament = best_tournament
-        if seed is not None:
-            random.seed(seed)
-            np.random.seed(seed)
+        # if seed is not None:
+        #     random.seed(seed)
+        #     np.random.seed(seed)
 
 
         if weights is None:

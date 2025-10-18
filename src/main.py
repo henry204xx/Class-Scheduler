@@ -242,9 +242,14 @@ def main():
             'obj_value': obj_value,
             'time': ga_time,
             'iterations': ga_params['generations'],
-            'history': ga.best_history
+            'history': ga.best_history,
+            'avg_history': ga.avg_history,
+            'population_size': ga.population_size,
+            'elitisism_ratio': ga.elitisism_ratio,
+            'n_tournament': ga.n_tournament,
+            'best_tournament': ga.best_tournament
         }
-        
+                
         analyzer.add_result('Genetic Algorithm', result_data)
         results['Genetic Algorithm'] = {'jadwal': result_jadwal, 'obj_value': obj_value}
         # print(f" Genetic Algorithm completed in {ga_time:.2f} seconds")
