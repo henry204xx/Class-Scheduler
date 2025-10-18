@@ -293,32 +293,6 @@ class Jadwal:
         
         return value
     
-    
-    
-    
-    """
-    the followings are a bunch of helper methods yang gue gk tau bakal kepake or nah
-    nanti kalo gk kepake apus aja
-    """
-    
-    def get_matkul_schedule(self, kode_matkul):
-        """
-        
-        Buat dapetin semua pertemuan untuk suatu mata kuliah
-        
-        Args: 
-            kode_matkul (str): Kode mata kuliah (e.g., "IF3071_K01")
-        
-        Returns: 
-            list: List of dict, setiap dict berisi info pertemuan:
-                  - slot (int): Index slot waktu
-                  - hari (int): Hari (1-5)
-                  - jam (int): Jam mulai (7-17)
-                  - ruang (str): Kode ruangan
-                  - ruang_idx (int): Index ruangan
-        
-        """ 
-        return self.schedule_matkul.get(kode_matkul, [])
      
     def get_cell(self, slot, ruang_idx):
         """
@@ -332,22 +306,6 @@ class Jadwal:
             list: List of str berisi kode matkul yang ada di cell tsb
         """
         return self.schedule_matrix[slot, ruang_idx]
-    
-    def set_cell(self, slot, ruang_idx, kode_matkul_list):
-        """
-        Set isi cell pada posisi tertentu.
-        
-        Args:
-            slot (int): Index slot waktu (0-54)
-            ruang_idx (int): Index ruangan (0 - num_ruangan-1)
-            kode_matkul_list (list or str): List kode matkul
-        
-        Returns: None
-        
-        """
-        if not isinstance(kode_matkul_list, list):
-            kode_matkul_list = [kode_matkul_list] if kode_matkul_list else []
-        self.schedule_matrix[slot, ruang_idx] = kode_matkul_list
         
     def add_to_cell(self, slot, ruang_idx, kode_matkul):
         """
@@ -429,30 +387,6 @@ class Jadwal:
                     conflict_indices.append([i, j])
         return np.array(conflict_indices) if conflict_indices else np.array([]).reshape(0, 2)
     
-    def swap_slots(self, slot1, ruang1, slot2, ruang2):
-        """
-        Swap isi dua slot.
-        
-        Args:
-            slot1 (int): Index slot pertama (0-54)
-            ruang1 (int): Index ruangan pertama
-            slot2 (int): Index slot kedua (0-54)
-            ruang2 (int): Index ruangan kedua
-        
-        Returns: None (swap in-place)
-        """
-        temp = self.schedule_matrix[slot1, ruang1].copy()
-        self.schedule_matrix[slot1, ruang1] = self.schedule_matrix[slot2, ruang2].copy()
-        self.schedule_matrix[slot2, ruang2] = temp
-    
-    def copy_schedule(self):
-        "Buat dapetin copy of the schedule, returns self.schedule_matrix which ndarray"
-        new_matrix = np.empty_like(self.schedule_matrix)
-        for i in range(new_matrix.shape[0]):
-            for j in range(new_matrix.shape[1]):
-                new_matrix[i, j] = self.schedule_matrix[i, j].copy()
-        return new_matrix
-
     
     def get_dosen_unavailable_slots(self, nama_dosen):
         """
